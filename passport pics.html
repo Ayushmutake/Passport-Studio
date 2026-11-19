@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PassPort Studio — Photo Print Layout</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0f0f0f; --paper: #f7f4ef; --cream: #ede9e0; --accent: #c84b2f;
+    --accent-light: #fdf0ec; --mid: #6b6560; --border: #d4cec4; --white: #fff; --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+
+  header {
+    background: var(--ink); color: var(--white); padding: 0 2rem; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .logo-text { font-family: 'DM Serif Display', serif; font-size: 20px; letter-spacing: -0.3px; }
+  .logo-text span { color: var(--accent); }
+  .header-actions { display: flex; gap: 10px; }
+  .btn {
+    padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+    display: inline-flex; align-items: center; gap: 6px; transition: all .15s; font-family: inherit;
+  }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .btn-ghost { background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.2); }
+  .btn-ghost:hover { background: rgba(255,255,255,.2); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover:not(:disabled) { background: #b03d22; }
+  .btn-dark { background: var(--ink); color: white; }
+  .btn-dark:hover { background: #2a2a2a; }
+  .btn-outline { background: white; color: var(--ink); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--cream); }
+
+  .workspace { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 64px); }
+
+  .sidebar {
+    background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    overflow-y: auto; max-height: calc(100vh - 64px); position: sticky; top: 64px;
+  }
+  .sidebar-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+  .sidebar-section:last-child { border-bottom: none; flex: 1; }
+  .section-title { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--mid); margin-bottom: 12px; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 1.5rem 1rem; text-align: center;
+    cursor: pointer; background: var(--paper); transition: all .2s; position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { width: 44px; height: 44px; background: var(--cream); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 20px; }
+  .upload-zone h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .upload-zone p { font-size: 11px; color: var(--mid); }
+
+  .photo-list { display: flex; flex-direction: column; gap: 8px; }
+  .photo-item { background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 8px; animation: slideIn .2s ease; }
+  .photo-item:hover { border-color: #b0a89a; }
+  .photo-row { display: flex; align-items: center; gap: 10px; }
+  .photo-thumb { width: 42px; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--border); background: var(--cream); display: block; }
+  .photo-info { flex: 1; min-width: 0; }
+  .photo-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .photo-copies { font-size: 11px; color: var(--mid); }
+  .adjust-link { background: none; border: none; color: var(--accent); font-size: 11px; cursor: pointer; padding: 0; font-family: inherit; margin-top: 2px; }
+  .qty-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .qty-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer;
+    font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--ink);
+    transition: transform .12s; line-height: 1; font-family: inherit;
+  }
+  .qty-btn.plus { background: var(--ink); color: white; border-color: var(--ink); }
+  .qty-btn:hover { transform: scale(1.1); }
+  .qty-btn.plus:hover { background: var(--accent); border-color: var(--accent); }
+  .qty-num { font-size: 14px; font-weight: 600; min-width: 22px; text-align: center; }
+  .photo-del { background: none; border: none; cursor: pointer; color: #c9c3bb; font-size: 15px; padding: 2px 4px; border-radius: 4px; transition: color .12s; flex-shrink: 0; font-family: inherit; }
+  .photo-del:hover { color: var(--accent); }
+
+  .adjust-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .adjust-panel.open { display: block; }
+  .adjust-panel label { display: grid; grid-template-columns: 62px 1fr; align-items: center; gap: 8px; font-size: 11px; color: var(--mid); margin-bottom: 6px; }
+  .adjust-panel input[type=range] { width: 100%; accent-color: var(--accent); }
+  .adjust-panel button { font-size: 11px; background: none; border: 1px solid var(--border); border-radius: 5px; padding: 3px 8px; cursor: pointer; font-family: inherit; color: var(--mid); }
+
+  .setting-row { margin-bottom: 12px; }
+  .setting-row:last-child { margin-bottom: 0; }
+  .setting-row label { font-size: 12px; color: var(--mid); display: block; margin-bottom: 5px; font-weight: 500; }
+  .setting-row select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+    background: white; color: var(--ink); cursor: pointer; font-family: inherit; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6560'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .setting-row select:focus { outline: none; border-color: var(--ink); }
+
+  .stats-bar { display: flex; background: var(--paper); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .stat-item { flex: 1; padding: 10px 8px; text-align: center; border-right: 1px solid var(--border); }
+  .stat-item:last-child { border-right: none; }
+  .stat-val { font-size: 18px; font-weight: 600; line-height: 1; }
+  .stat-label { font-size: 10px; color: var(--mid); margin-top: 2px; }
+
+  .main-area { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
+  .preview-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .preview-title { font-family: 'DM Serif Display', serif; font-size: 22px; }
+  .preview-subtitle { font-size: 13px; color: var(--mid); margin-top: 2px; }
+  .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .sheet-container {
+    display: flex; justify-content: center; align-items: flex-start; background: var(--cream);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; overflow: auto;
+  }
+  /* Real mm units: on-screen proportions == printed proportions */
+  .print-sheet { background: white; box-shadow: 0 4px 24px rgba(0,0,0,.12); position: relative; flex-shrink: 0; }
+  .passport-slot { position: absolute; background: #f0eeea; }
+  .passport-slot img { width: 100%; height: 100%; display: block; }
+  .slot-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; }
+  .slot-empty-icon { font-size: 20px; opacity: .3; }
+  .slot-empty-text { font-size: 9px; color: #bbb; }
+  .crop-mark { position: absolute; background: #999; }
+
+  .overflow-warn {
+    display: none; background: #fef3ed; border: 1px solid #f5c4a1; border-radius: 6px; padding: 10px 14px;
+    font-size: 13px; color: #7a3b10; align-items: center; gap: 8px;
+  }
+  .overflow-warn.show { display: flex; }
+
+  .empty-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 12px; color: var(--mid); }
+  .empty-preview .big-icon { font-size: 52px; opacity: .4; }
+  .empty-preview h3 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink); }
+  .empty-preview p { font-size: 14px; }
+
+  @media print {
+    header, .sidebar, .preview-toolbar, .overflow-warn { display: none !important; }
+    body { background: white; }
+    .workspace { display: block; }
+    .main-area { padding: 0; }
+    .sheet-container { background: white; border: none; padding: 0; overflow: visible; display: block; }
+    .print-sheet { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .slot-empty { display: none !important; }
+    .passport-slot { background: #fff !important; }
+  }
+  @media (max-width: 768px) {
+    .workspace { grid-template-columns: 1fr; }
+    .sidebar { position: static; max-height: none; }
+    .main-area { padding: 1rem; }
+    header { padding: 0 1rem; }
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .add-more-btn {
+    width: 100%; padding: 10px; border: 1.5px dashed var(--border); border-radius: 8px; background: none; cursor: pointer;
+    font-size: 13px; color: var(--mid); font-family: inherit; transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px;
+  }
+  .add-more-btn:hover { border-color: var(--ink); color: var(--ink); background: var(--paper); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 18 18"><rect x="2" y="2" width="6" height="8" rx="1"/><rect x="10" y="2" width="6" height="8" rx="1"/><rect x="2" y="12" width="6" height="4" rx="1"/><rect x="10" y="12" width="6" height="4" rx="1"/></svg>
+    </div>
+    <span class="logo-text">Pass<span>Port</span> Studio</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="printSheet()">🖨 Print</button>
+    <button class="btn btn-accent" onclick="downloadSheet()">⬇ Save PNG</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Upload Photos</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*" multiple />
+        <div class="upload-icon">📷</div>
+        <h4>Drop photos here</h4>
+        <p>JPG, PNG, WebP · Multiple files OK</p>
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="photoListSection" style="display:none">
+      <div class="section-title">Photos <span id="photoCountBadge" style="font-size:11px;background:var(--ink);color:white;border-radius:10px;padding:1px 7px;margin-left:4px;letter-spacing:0">0</span></div>
+      <div class="photo-list" id="photoList"></div>
+      <button class="add-more-btn" onclick="document.getElementById('fileInput').click()"><span style="font-size:16px">+</span> Add more photos</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Layout Settings</div>
+      <div class="setting-row">
+        <label for="photoSize">Photo size</label>
+        <select id="photoSize">
+          <option value="35x45">35 × 45 mm — Standard passport</option>
+          <option value="51x51">51 × 51 mm — US passport</option>
+          <option value="40x60">40 × 60 mm — Visa photo</option>
+          <option value="25x35">25 × 35 mm — Small format</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="sheetSize">Sheet size</label>
+        <select id="sheetSize">
+          <option value="A4">A4 — 210 × 297 mm</option>
+          <option value="4x6">4 × 6 inch — 102 × 152 mm</option>
+          <option value="5x7">5 × 7 inch — 127 × 178 mm</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="spacing">Spacing between photos</label>
+        <select id="spacing">
+          <option value="2">2 mm — tight</option>
+          <option value="3" selected>3 mm — standard</option>
+          <option value="5">5 mm — loose</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="cropMarks">Crop / cut marks</label>
+        <select id="cropMarks">
+          <option value="yes">Show crop marks</option>
+          <option value="no">Hide crop marks</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Summary</div>
+      <div class="stats-bar">
+        <div class="stat-item"><div class="stat-val" id="statPhotos">0</div><div class="stat-label">Photos</div></div>
+        <div class="stat-item"><div class="stat-val" id="statCopies">0</div><div class="stat-label">Copies</div></div>
+        <div class="stat-item"><div class="stat-val" id="statSlots">0</div><div class="stat-label">Slots</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <div class="preview-toolbar">
+      <div>
+        <div class="preview-title">Print Preview</div>
+        <div class="preview-subtitle" id="previewSubtitle">Upload photos to get started</div>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-outline" onclick="clearAll()">🗑 Clear all</button>
+        <button class="btn btn-dark" onclick="printSheet()">🖨 Print sheet</button>
+        <button class="btn btn-accent" id="dlBtn" onclick="downloadSheet()">⬇ Download PNG</button>
+      </div>
+    </div>
+
+    <div class="overflow-warn" id="overflowWarn">
+      ⚠️ Too many copies for this sheet — extra copies are not shown. Reduce quantities or choose a larger sheet.
+    </div>
+
+    <div class="sheet-container">
+      <div class="empty-preview" id="emptyState">
+        <div class="big-icon">🖼</div>
+        <h3>No photos yet</h3>
+        <p>Upload passport photos from the sidebar to arrange them</p>
+      </div>
+      <div class="print-sheet" id="printSheet" style="display:none"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const PHOTO_SIZES = {
+  '35x45': { w: 35, h: 45 }, '51x51': { w: 51, h: 51 },
+  '40x60': { w: 40, h: 60 }, '25x35': { w: 25, h: 35 }
+};
+const SHEET_SIZES = {
+  'A4': { w: 210, h: 297 }, '4x6': { w: 102, h: 152 }, '5x7': { w: 127, h: 178 }
+};
+const MARGIN = 5;            // mm, minimum sheet margin
+const PRINT_DPI = 300;
+const MM_TO_PX = PRINT_DPI / 25.4;
+const CROP_LEN = 2, CROP_GAP = 0.6; // mm
+
+// photo: { img, name, qty, zoom, ox, oy, cache }
+const photos = [];
+let uid = 0;
+
+/* ───────── Core: crop to exact aspect ratio (never stretches) ─────────
+   Takes the largest region of the source with the target aspect ratio
+   (cover-fit), shrinks it by `zoom`, positions it with ox/oy (0..1),
+   and draws it 1:1 in ratio onto a canvas of the exact output size. */
+function cropToCanvas(p, ph, pxPerMm) {
+  const W = Math.max(1, Math.round(ph.w * pxPerMm));
+  const H = Math.max(1, Math.round(ph.h * pxPerMm));
+  const iw = p.img.naturalWidth, ih = p.img.naturalHeight;
+  const target = ph.w / ph.h;
+
+  let cw, ch;
+  if (iw / ih > target) { ch = ih; cw = ih * target; }
+  else { cw = iw; ch = iw / target; }
+  cw /= p.zoom; ch /= p.zoom;
+
+  const sx = (iw - cw) * p.ox;
+  const sy = (ih - ch) * p.oy;
+
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(p.img, sx, sy, cw, ch, 0, 0, W, H);
+  return c;
+}
+
+// Cached data-URL of the crop at preview resolution
+function croppedURL(p, ph, pxPerMm, tag) {
+  const key = [tag, ph.w, ph.h, p.zoom, p.ox, p.oy].join('|');
+  p.cache = p.cache || {};
+  if (!p.cache[key]) {
+    // keep cache small: drop old entries for this tag
+    Object.keys(p.cache).forEach(k => { if (k.startsWith(tag + '|')) delete p.cache[k]; });
+    p.cache[key] = cropToCanvas(p, ph, pxPerMm).toDataURL('image/jpeg', 0.95);
+  }
+  return p.cache[key];
+}
+
+/* ───────── Helpers ───────── */
+function currentConfig() {
+  const ph = PHOTO_SIZES[$('photoSize').value];
+  const sh = SHEET_SIZES[$('sheetSize').value];
+  const spacing = parseInt($('spacing').value, 10);
+  const showCrop = $('cropMarks').value === 'yes';
+  const cols = Math.max(0, Math.floor((sh.w - MARGIN * 2 + spacing) / (ph.w + spacing)));
+  const rows = Math.max(0, Math.floor((sh.h - MARGIN * 2 + spacing) / (ph.h + spacing)));
+  // centre the grid on the sheet
+  const gridW = cols * ph.w + (cols - 1) * spacing;
+  const gridH = rows * ph.h + (rows - 1) * spacing;
+  const offX = (sh.w - gridW) / 2;
+  const offY = (sh.h - gridH) / 2;
+  return { ph, sh, spacing, showCrop, cols, rows, offX, offY, slots: cols * rows };
+}
+
+function flatCopies() {
+  const out = [];
+  photos.forEach(p => { for (let q = 0; q < p.qty; q++) out.push(p); });
+  return out;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* ───────── Uploading ───────── */
+$('fileInput').addEventListener('change', function () {
+  addFiles(Array.from(this.files));
+  this.value = '';
+});
+const zone = $('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  addFiles(Array.from(e.dataTransfer.files));
+});
+
+function addFiles(files) {
+  const imgs = files.filter(f => f.type.startsWith('image/'));
+  const skipped = files.length - imgs.length;
+  let failed = 0, pending = imgs.length;
+
+  const done = () => {
+    if (--pending > 0) return;
+    renderPhotoList();
+    renderPreview();
+    if (failed || skipped) {
+      alert(`${failed + skipped} file(s) couldn't be added. Use JPG, PNG or WebP (HEIC isn't supported by most browsers — convert it first).`);
+    }
+  };
+  if (!imgs.length) { if (skipped) done.call(null, pending = 1); return; }
+
+  imgs.forEach(file => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      photos.push({
+        id: ++uid, img, url,
+        name: file.name.replace(/\.[^.]+$/, ''),
+        qty: 1, zoom: 1, ox: 0.5,
+        oy: 0.35 // bias toward the top so heads aren't cut off in portraits
+      });
+      done();
+    };
+    img.onerror = () => { failed++; URL.revokeObjectURL(url); done(); };
+    img.src = url;
+  });
+}
+
+/* ───────── Sidebar list ───────── */
+function thumbURL(p) {
+  const { ph } = currentConfig();
+  return croppedURL(p, ph, 4, 'thumb'); // ~4px/mm → 140px wide
+}
+
+function renderPhotoList() {
+  const list = $('photoList');
+  $('photoCountBadge').textContent = photos.length;
+  $('photoListSection').style.display = photos.length ? 'block' : 'none';
+  const openIds = new Set([...list.querySelectorAll('.adjust-panel.open')].map(el => el.dataset.id));
+  list.innerHTML = '';
+
+  photos.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'photo-item';
+    item.innerHTML = `
+      <div class="photo-row">
+        <img class="photo-thumb" data-thumb="${p.id}" src="${thumbURL(p)}" alt="${esc(p.name)}" />
+        <div class="photo-info">
+          <div class="photo-name" title="${esc(p.name)}">${esc(p.name)}</div>
+          <div class="photo-copies">${p.qty} cop${p.qty === 1 ? 'y' : 'ies'} on sheet</div>
+          <button class="adjust-link" data-act="toggle">Adjust crop</button>
+        </div>
+        <div class="qty-wrap">
+          <button class="qty-btn" data-act="minus" title="Remove one copy" aria-label="Fewer copies">−</button>
+          <span class="qty-num">${p.qty}</span>
+          <button class="qty-btn plus" data-act="plus" title="Add one more copy" aria-label="More copies">+</button>
+        </div>
+        <button class="photo-del" data-act="del" title="Remove photo" aria-label="Remove photo">✕</button>
+      </div>
+      <div class="adjust-panel ${openIds.has(String(p.id)) ? 'open' : ''}" data-id="${p.id}">
+        <label>Zoom <input type="range" min="1" max="3" step="0.01" value="${p.zoom}" data-k="zoom"></label>
+        <label>Left / right <input type="range" min="0" max="1" step="0.01" value="${p.ox}" data-k="ox"></label>
+        <label>Up / down <input type="range" min="0" max="1" step="0.01" value="${p.oy}" data-k="oy"></label>
+        <button data-act="reset">Reset crop</button>
+      </div>`;
+
+    item.addEventListener('click', e => {
+      const act = e.target.dataset.act;
+      if (!act) return;
+      if (act === 'minus') { p.qty = Math.max(1, p.qty - 1); renderPhotoList(); renderPreview(); }
+      else if (act === 'plus') { p.qty++; renderPhotoList(); renderPreview(); }
+      else if (act === 'del') { removePhoto(p.id); }
+      else if (act === 'toggle') { item.querySelector('.adjust-panel').classList.toggle('open'); }
+      else if (act === 'reset') { p.zoom = 1; p.ox = 0.5; p.oy = 0.35; renderPhotoList(); renderPreview(); }
+    });
+
+    item.querySelectorAll('input[type=range]').forEach(r => {
+      r.addEventListener('input', () => {
+        p[r.dataset.k] = parseFloat(r.value);
+        item.querySelector('.photo-thumb').src = thumbURL(p);
+        scheduleRender();
+      });
+    });
+
+    list.appendChild(item);
+  });
+}
+
+function removePhoto(id) {
+  const i = photos.findIndex(p => p.id === id);
+  if (i < 0) return;
+  URL.revokeObjectURL(photos[i].url);
+  photos.splice(i, 1);
+  renderPhotoList();
+  renderPreview();
+}
+
+function clearAll() {
+  photos.forEach(p => URL.revokeObjectURL(p.url));
+  photos.length = 0;
+  renderPhotoList();
+  renderPreview();
+}
+
+// throttle slider-driven re-renders to one per frame
+let rafId = 0;
+function scheduleRender() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => { rafId = 0; renderPreview(); });
+}
+
+/* ───────── Sheet preview ───────── */
+function addCropMarks(slot) {
+  const t = 0.15; // line thickness mm
+  const mk = (css) => { const d = document.createElement('div'); d.className = 'crop-mark'; d.style.cssText = css; slot.appendChild(d); };
+  const off = CROP_GAP + CROP_LEN;
+  [['left', 'top'], ['right', 'top'], ['left', 'bottom'], ['right', 'bottom']].forEach(([h, v]) => {
+    // horizontal tick (sits just outside the slot, level with its edge)
+    mk(`height:${t}mm;width:${CROP_LEN}mm;${h}:-${off}mm;${v}:0;`);
+    // vertical tick
+    mk(`width:${t}mm;height:${CROP_LEN}mm;${h}:0;${v}:-${off}mm;`);
+  });
+}
+
+function renderPreview() {
+  const cfg = currentConfig();
+  const { ph, sh, spacing, showCrop, cols, rows, offX, offY, slots } = cfg;
+  const sheet = $('printSheet');
+  const copies = flatCopies();
+  const overflow = copies.length > slots;
+
+  $('overflowWarn').classList.toggle('show', overflow);
+  $('statPhotos').textContent = photos.length;
+  $('statCopies').textContent = copies.length;
+  $('statSlots').textContent = slots;
+
+  if (!photos.length) {
+    $('emptyState').style.display = 'flex';
+    sheet.style.display = 'none';
+    $('previewSubtitle').textContent = 'Upload photos to get started';
+    return;
+  }
+
+  $('emptyState').style.display = 'none';
+  sheet.style.display = 'block';
+  sheet.style.width = sh.w + 'mm';
+  sheet.style.height = sh.h + 'mm';
+  sheet.innerHTML = '';
+  setPageSize(sh);
+
+  $('previewSubtitle').textContent =
+    `${$('photoSize').value} mm photos · ${$('sheetSize').value} sheet · ${cols}×${rows} grid · ${Math.min(copies.length, slots)}/${slots} slots used`;
+
+  // Crop each photo once per render (≈8px/mm is sharp enough on screen)
+  const urlFor = new Map();
+  photos.forEach(p => urlFor.set(p, croppedURL(p, ph, 8, 'preview')));
+
+  const frag = document.createDocumentFragment();
+  let idx = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++, idx++) {
+      const slot = document.createElement('div');
+      slot.className = 'passport-slot';
+      slot.style.cssText =
+        `left:${offX + c * (ph.w + spacing)}mm;top:${offY + r * (ph.h + spacing)}mm;width:${ph.w}mm;height:${ph.h}mm;`;
+
+      if (showCrop) addCropMarks(slot);
+
+      if (idx < copies.length) {
+        const img = document.createElement('img');
+        img.src = urlFor.get(copies[idx]);
+        img.alt = copies[idx].name;
+        img.draggable = false;
+        slot.appendChild(img);
+      } else {
+        slot.insertAdjacentHTML('beforeend', '<div class="slot-empty"><div class="slot-empty-icon">□</div><div class="slot-empty-text">empty</div></div>');
+      }
+      frag.appendChild(slot);
+    }
+  }
+  sheet.appendChild(frag);
+}
+
+// Make the browser print dialog default to the chosen sheet size, no margins
+function setPageSize(sh) {
+  let st = $('pageSizeStyle');
+  if (!st) { st = document.createElement('style'); st.id = 'pageSizeStyle'; document.head.appendChild(st); }
+  st.textContent = `@page { size: ${sh.w}mm ${sh.h}mm; margin: 0; }`;
+}
+
+function printSheet() {
+  if (!photos.length) { alert('Upload photos first!'); return; }
+  window.print();
+}
+
+/* ───────── Export: drawn straight to a 300-DPI canvas ─────────
+   No DOM screenshotting, so the PNG matches the exact physical
+   dimensions (e.g. A4 = 2480×3508 px) and photos are never distorted. */
+async function downloadSheet() {
+  if (!photos.length) { alert('Upload photos first to generate a sheet!'); return; }
+  const btn = $('dlBtn');
+  btn.disabled = true;
+  await new Promise(r => setTimeout(r, 20)); // let the button state paint
+
+  try {
+    const { ph, sh, spacing, cols, rows, offX, offY } = currentConfig();
+    const copies = flatCopies();
+    const px = mm => Math.round(mm * MM_TO_PX);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = px(sh.w);
+    canvas.height = px(sh.h);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const crops = new Map();
+    photos.forEach(p => crops.set(p, cropToCanvas(p, ph, MM_TO_PX)));
+
+    let idx = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++, idx++) {
+        const x = px(offX + c * (ph.w + spacing));
+        const y = px(offY + r * (ph.h + spacing));
+        const w = px(ph.w), h = px(ph.h);
+
+        if (idx < copies.length) ctx.drawImage(crops.get(copies[idx]), x, y, w, h);
+
+        // No crop marks in the saved PNG: the marks of neighbouring photos
+        // met in the gap and formed small line squares between photos.
+      }
+    }
+
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.download = 'passport-photos.png';
+      a.href = URL.createObjectURL(blob);
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      btn.disabled = false;
+    }, 'image/png');
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    alert('Export failed. Try fewer or smaller photos.');
+  }
+}
+
+/* ───────── Settings changes ───────── */
+['photoSize', 'sheetSize', 'spacing', 'cropMarks'].forEach(id =>
+  $(id).addEventListener('change', () => {
+    if (id === 'photoSize') renderPhotoList(); // thumbs follow the new aspect ratio
+    renderPreview();
+  })
+);
+
+renderPreview();
+</script>
+</body>
+</html>
